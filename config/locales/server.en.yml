@@ -21,6 +21,8 @@ en:
     video_stream_intercept_native_uploads: "Automatically intercept native video uploads and redirect to video stream service"
     video_stream_intercept_threshold_mb: "Minimum video file size (MB) to intercept and upload to streaming service instead of standard uploads"
     video_stream_enable_live_streams: "Enable live stream creation with RTMP/RTMPS broadcasting support"
+    video_stream_delete_on_post_delete: "Delete videos from Cloudflare/Bunny when the post containing them is deleted"
+    video_stream_delete_grace_period_hours: "Hours to wait after a post is deleted before removing its video from the streaming provider (default: 48, matching Discourse's orphan upload grace period; set to 0 for immediate cleanup on the next hourly job)"
   video_stream:
     errors:
       misconfigured: "Video streaming is not configured yet. Please update the site settings and try again."

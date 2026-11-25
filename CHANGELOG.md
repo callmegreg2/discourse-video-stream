@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.16] - 2026-11-25
+
+### Added
+- **Automatic Video Cleanup on Post Deletion**: Uploaded videos (Cloudflare Stream and Bunny.net Stream) are now automatically scheduled for deletion from their provider when their original post or topic is deleted, preventing orphaned videos on external providers.
+- **Configurable Deletion Grace Period**: Added `video_stream_delete_on_post_delete` (default `true`) and `video_stream_delete_grace_period_hours` (default `48` hours, matching Discourse's `clean_orphan_uploads_grace_period_hours`). Pending deletions are automatically cancelled if the post/topic is recovered or if another active post still references the video.
+
+---
+
 ## [0.0.15] - 2026-10-24
 
 ### Changed

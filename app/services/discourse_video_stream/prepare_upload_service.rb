@@ -87,6 +87,8 @@ module DiscourseVideoStream
       signature_data = "#{library_id}#{api_key}#{expires}#{video_id}"
       signature = OpenSSL::Digest::SHA256.hexdigest(signature_data)
 
+      DeletedVideoTracker.record_upload(video_id: video_id, provider: "bunny")
+
       {
         provider: "bunny",
         endpoint: "#{BUNNY_API_HOST}/tusupload",

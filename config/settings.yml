@@ -92,3 +92,11 @@ plugins:
   video_stream_enable_live_streams:
     default: false
     client: true
+  video_stream_delete_on_post_delete:
+    default: true
+    client: false
+  video_stream_delete_grace_period_hours:
+    default: 48
+    client: false
+    min: 0
+    max: 8760

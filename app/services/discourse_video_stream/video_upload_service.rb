@@ -79,9 +79,12 @@ module DiscourseVideoStream
         context.fail!(error: I18n.t("video_stream.errors.upload_url"), status: 422)
       end
 
+      stream_media_id = response.headers["stream-media-id"]
+      DeletedVideoTracker.record_upload(video_id: stream_media_id, provider: "cloudflare")
+
       {
         upload_url: upload_url,
-        stream_media_id: response.headers["stream-media-id"],
+        stream_media_id: stream_media_id,
         tus_resumable: response.headers["tus-resumable"].presence || params.tus_resumable,
       }
     rescue JSON::ParserError, Faraday::Error => error
@@ -130,6 +133,8 @@ module DiscourseVideoStream
       expires = (Time.now + 24.hours).to_i
       signature_data = "#{library_id}#{api_key}#{expires}#{video_id}"
       signature = OpenSSL::Digest::SHA256.hexdigest(signature_data)
+
+      DeletedVideoTracker.record_upload(video_id: video_id, provider: "bunny")
 
       {
         upload_url: "#{BUNNY_API_HOST}/tusupload",

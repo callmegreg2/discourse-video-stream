@@ -30,7 +30,7 @@ Discourse Video Stream adds a Cloudflare Stream and Bunny.net Stream-powered wor
      - `video_stream_bunny_library_id`: Bunny.net Stream Video Library ID
      - `video_stream_bunny_api_key`: Bunny.net Stream API Key / AccessKey
      - `video_stream_bunny_hostname`: Bunny.net Pull Zone CDN hostname (e.g. `vz-xxxxxx.b-cdn.net`)
-4. Adjust common settings as needed (allowed extensions, max file size in MB, max duration in seconds, keep original file name, native upload interception threshold, and live stream support).
+4. Adjust common settings as needed (allowed extensions, max file size in MB, max duration in seconds, keep original file name, native upload interception threshold, live stream support, and automatic deletion grace period after post deletion).
 5. Grant users appropriate upload permissions (`can_upload_external?` governs access to the endpoint).
 
 Once configured:
