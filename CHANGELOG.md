@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.17] - 2026-11-27
+
+### Fixed
+- **Permanent Deletion Bypassing Grace Period**: Permanently deleting a post or topic (`force_destroy: true` / `permanent: true`) now bypasses the `video_stream_delete_grace_period_hours` wait so the video is deleted from Cloudflare/Bunny on the next `CleanUpDeletedStreamVideos` run (while soft-deleted posts continue to respect the configured grace period).
+- **Cleanup Observability & Credential Trimming**: Added informational logging in `DeletedVideoTracker` when scheduling, skipping within the grace period, cancelling, or completing deletions, and trimmed whitespace from API credentials in `VideoDeletionService`.
+
+---
+
 ## [0.0.16] - 2026-11-25
 
 ### Added

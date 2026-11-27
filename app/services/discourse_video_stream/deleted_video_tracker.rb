@@ -123,10 +123,11 @@ module DiscourseVideoStream
       videos.each_key { |video_id| cancel_deletion(video_id) }
     end
 
-    def self.on_post_destroyed(post)
+    def self.on_post_destroyed(post, opts = {})
       return if post.blank?
       return unless SiteSetting.video_stream_enabled && SiteSetting.video_stream_delete_on_post_delete
 
+      permanent = permanent_delete?(post, opts)
       videos = extract_videos_from_post(post, include_cached: true)
       videos.each do |video_id, provider|
         schedule_deletion(
@@ -134,6 +135,7 @@ module DiscourseVideoStream
           provider: provider || provider_for(video_id),
           post_id: post.id,
           topic_id: post.topic_id,
+          permanent: permanent,
         )
       end
 
@@ -152,7 +154,8 @@ module DiscourseVideoStream
       return if topic.blank?
       return unless SiteSetting.video_stream_enabled && SiteSetting.video_stream_delete_on_post_delete
 
-      Post.with_deleted.where(topic_id: topic.id).find_each { |post| on_post_destroyed(post) }
+      opts = topic.destroyed? ? { permanent: true } : {}
+      Post.with_deleted.where(topic_id: topic.id).find_each { |post| on_post_destroyed(post, opts) }
     end
 
     def self.on_topic_recovered(topic)
@@ -163,7 +166,14 @@ module DiscourseVideoStream
         .find_each { |post| on_post_recovered(post) }
     end
 
-    def self.schedule_deletion(video_id:, provider: nil, post_id: nil, topic_id: nil, deleted_at: Time.current)
+    def self.schedule_deletion(
+      video_id:,
+      provider: nil,
+      post_id: nil,
+      topic_id: nil,
+      deleted_at: Time.current,
+      permanent: false
+    )
       return if video_id.blank? || !video_id.to_s.match?(VALID_VIDEO_ID)
 
       key = "#{PENDING_PREFIX}#{video_id}"
@@ -182,16 +192,23 @@ module DiscourseVideoStream
           normalize_provider(existing&.dig("provider")) ||
           provider_for(video_id)
 
+      effective_permanent =
+        permanent == true || (existing.is_a?(Hash) && existing["permanent"] == true)
+
       payload = {
         video_id: video_id,
         provider: resolved_provider,
         post_id: post_id || existing&.dig("post_id"),
         topic_id: topic_id || existing&.dig("topic_id"),
         deleted_at: effective_deleted_at,
+        permanent: effective_permanent,
         attempts: existing&.dig("attempts").to_i,
       }
 
       PluginStore.set(DiscourseVideoStream::PLUGIN_NAME, key, payload)
+      Rails.logger.info(
+        "[VideoStream] Scheduled video #{video_id} for deletion (post_id=#{payload[:post_id]}, permanent=#{effective_permanent}).",
+      )
     end
 
     def self.cancel_deletion(video_id)
@@ -224,10 +241,11 @@ module DiscourseVideoStream
 
       grace_hours = [SiteSetting.video_stream_delete_grace_period_hours.to_i, 0].max
       cutoff = grace_hours.hours.ago
+      pending_pattern = "#{ActiveRecord::Base.sanitize_sql_like(PENDING_PREFIX)}%"
 
       PluginStoreRow
         .where(plugin_name: DiscourseVideoStream::PLUGIN_NAME)
-        .where("plugin_store_rows.key LIKE ?", "#{PENDING_PREFIX}%")
+        .where("plugin_store_rows.key LIKE ?", pending_pattern)
         .find_each do |row|
           entry = parse_row_value(row)
           next if entry.blank?
@@ -240,9 +258,18 @@ module DiscourseVideoStream
             next
           end
 
-          next if deleted_at > cutoff
+          is_permanent = entry["permanent"] == true
+          if !is_permanent && deleted_at > cutoff
+            Rails.logger.info(
+              "[VideoStream] Skipping video #{video_id}: within #{grace_hours}h grace period (deleted_at=#{deleted_at.iso8601}).",
+            )
+            next
+          end
 
           if video_referenced_in_active_post?(video_id)
+            Rails.logger.info(
+              "[VideoStream] Cancelling deletion of #{video_id}: still referenced in an active post.",
+            )
             cancel_deletion(video_id)
             next
           end
@@ -256,6 +283,9 @@ module DiscourseVideoStream
             )
 
           if result.success?
+            Rails.logger.info(
+              "[VideoStream] Deleted #{result.dig(:deletion_result, :provider)} video #{video_id}.",
+            )
             cancel_deletion(video_id)
             PluginStore.remove(DiscourseVideoStream::PLUGIN_NAME, "#{VIDEO_META_PREFIX}#{video_id}")
           else
@@ -285,6 +315,16 @@ module DiscourseVideoStream
       end
     end
     private_class_method :save_post_videos
+
+    def self.permanent_delete?(post, opts)
+      return true if post.destroyed?
+      return false unless opts.is_a?(Hash)
+
+      ActiveModel::Type::Boolean.new.cast(
+        opts[:force_destroy] || opts["force_destroy"] || opts[:permanent] || opts["permanent"],
+      ) == true
+    end
+    private_class_method :permanent_delete?
 
     def self.normalize_provider(value)
       normalized = value.to_s.strip.downcase

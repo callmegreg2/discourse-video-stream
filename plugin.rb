@@ -3,7 +3,7 @@
 # name: discourse-video-stream
 # about: Integrates Cloudflare and Bunny.net Video Stream for video uploads and playback in Discourse.
 # meta_topic_id: TODO
-# version: 0.0.16
+# version: 0.0.17
 # authors: dthirdfatpig
 # url: https://github.com/dthirdfatpig/discourse-video-stream
 # required_version: 2.7.0
@@ -37,8 +37,8 @@ after_initialize do
     end
   end
 
-  on(:post_destroyed) do |post, _opts, _user|
-    DiscourseVideoStream::DeletedVideoTracker.on_post_destroyed(post)
+  on(:post_destroyed) do |post, opts, _user|
+    DiscourseVideoStream::DeletedVideoTracker.on_post_destroyed(post, opts)
   end
 
   on(:post_recovered) do |post, _opts, _user|

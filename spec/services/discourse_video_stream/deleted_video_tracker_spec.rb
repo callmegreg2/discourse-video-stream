@@ -164,5 +164,32 @@ RSpec.describe DiscourseVideoStream::DeletedVideoTracker do
 
       expect(delete_stub).to have_been_requested
     end
+
+    it "bypasses the grace period when a post is permanently deleted after soft deletion" do
+      video_id = "5d5bc37ffcf54c9b82e996823bffbb83"
+      post =
+        Fabricate(
+          :post,
+          user: user,
+          raw: "[video-stream id=\"#{video_id}\"][/video-stream]",
+        )
+      described_class.on_post_created(post)
+
+      delete_stub =
+        stub_request(
+          :delete,
+          "https://api.cloudflare.com/client/v4/accounts/cf-acc/stream/#{video_id}",
+        ).to_return(status: 200, body: { success: true }.to_json)
+
+      # Soft delete -> inside 48h grace period, should not delete yet
+      PostDestroyer.new(admin, post).destroy
+      described_class.cleanup_expired_deletions!
+      expect(delete_stub).not_to have_been_requested
+
+      # Permanently delete -> bypasses grace period on next job run
+      PostDestroyer.new(admin, post.reload, force_destroy: true).destroy
+      described_class.cleanup_expired_deletions!
+      expect(delete_stub).to have_been_requested
+    end
   end
 end

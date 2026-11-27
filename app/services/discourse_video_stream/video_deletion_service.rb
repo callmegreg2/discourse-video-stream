@@ -87,11 +87,11 @@ module DiscourseVideoStream
         if provider == "bunny"
           url =
             BUNNY_VIDEO_DELETE_PATH % {
-              library_id: SiteSetting.video_stream_bunny_library_id.presence,
+              library_id: ERB::Util.url_encode(SiteSetting.video_stream_bunny_library_id.to_s.strip),
               video_id: encoded_id,
             }
           headers = {
-            "AccessKey" => SiteSetting.video_stream_bunny_api_key.presence,
+            "AccessKey" => SiteSetting.video_stream_bunny_api_key.to_s.strip,
             "Accept" => "application/json",
           }
           Faraday.delete(url, nil, headers) do |req|
@@ -101,10 +101,10 @@ module DiscourseVideoStream
         else
           url =
             CF_VIDEO_DELETE_PATH % {
-              account_id: SiteSetting.video_stream_account_id.presence,
+              account_id: ERB::Util.url_encode(SiteSetting.video_stream_account_id.to_s.strip),
               video_id: encoded_id,
             }
-          headers = { "Authorization" => "Bearer #{SiteSetting.video_stream_api_token.presence}" }
+          headers = { "Authorization" => "Bearer #{SiteSetting.video_stream_api_token.to_s.strip}" }
           Faraday.delete(url, nil, headers) do |req|
             req.options.timeout = FARADAY_TIMEOUT
             req.options.open_timeout = FARADAY_OPEN_TIMEOUT
