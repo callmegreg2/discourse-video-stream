@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.18] - 2026-11-27
+
+### Fixed
+- **Provider-Agnostic Upload Error Message**: Updated `video_stream.errors.upload_url` in `config/locales/server.en.yml` to `"Unable to request an upload URL from the video streaming service. Please try again later."` so errors for either Cloudflare Stream or Bunny.net Stream do not mention Cloudflare specifically.
+
+---
+
 ## [0.0.17] - 2026-11-27
 
 ### Fixed

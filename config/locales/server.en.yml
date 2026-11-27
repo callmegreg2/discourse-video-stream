@@ -26,5 +26,5 @@ en:
   video_stream:
     errors:
       misconfigured: "Video streaming is not configured yet. Please update the site settings and try again."
-      upload_url: "Unable to request an upload URL from Cloudflare Stream. Please try again later."
+      upload_url: "Unable to request an upload URL from the video streaming service. Please try again later."
       create_live_input: "Unable to create live stream. Please try again later."
