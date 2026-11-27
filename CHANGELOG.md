@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.18] - 2026-11-27
+
+### Fixed
+- **Provider-Agnostic Upload Error Message**: Updated `video_stream.errors.upload_url` from referencing "Cloudflare Stream" to "the video streaming service" so Bunny.net upload failures no longer display a misleading Cloudflare error.
+- **Credential Whitespace Trimming & Logging**: Trimmed leading/trailing whitespace from Cloudflare/Bunny IDs and API keys in `PrepareUploadService` and `VideoUploadService`, and added provider context to prepare-upload failure logs.
+
+---
+
 ## [0.0.17] - 2026-11-27
 
 ### Fixed

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "base64"
+require "erb"
 require "openssl"
 
 module DiscourseVideoStream
@@ -50,8 +51,8 @@ module DiscourseVideoStream
     end
 
     def fetch_cloudflare_upload_details(params)
-      account_id = SiteSetting.video_stream_account_id.presence
-      api_token = SiteSetting.video_stream_api_token.presence
+      account_id = SiteSetting.video_stream_account_id.to_s.strip.presence
+      api_token = SiteSetting.video_stream_api_token.to_s.strip.presence
 
       if account_id.blank? || api_token.blank?
         context.fail!(error: I18n.t("video_stream.errors.misconfigured"), status: 422)
@@ -59,7 +60,7 @@ module DiscourseVideoStream
 
       response =
         Faraday.post(
-          CF_API_PATH % { account_id: account_id },
+          CF_API_PATH % { account_id: ERB::Util.url_encode(account_id) },
           nil,
           request_headers(api_token, params),
         ) do |req|
@@ -93,8 +94,8 @@ module DiscourseVideoStream
     end
 
     def fetch_bunny_upload_details(params)
-      library_id = SiteSetting.video_stream_bunny_library_id.presence
-      api_key = SiteSetting.video_stream_bunny_api_key.presence
+      library_id = SiteSetting.video_stream_bunny_library_id.to_s.strip.presence
+      api_key = SiteSetting.video_stream_bunny_api_key.to_s.strip.presence
 
       if library_id.blank? || api_key.blank?
         context.fail!(error: I18n.t("video_stream.errors.misconfigured"), status: 422)
@@ -105,7 +106,7 @@ module DiscourseVideoStream
 
       create_response =
         Faraday.post(
-          "#{BUNNY_API_HOST}/library/#{library_id}/videos",
+          "#{BUNNY_API_HOST}/library/#{ERB::Util.url_encode(library_id)}/videos",
           { title: title }.to_json,
           {
             "AccessKey" => api_key,
