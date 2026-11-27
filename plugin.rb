@@ -3,7 +3,7 @@
 # name: discourse-video-stream
 # about: Integrates Cloudflare and Bunny.net Video Stream for video uploads and playback in Discourse.
 # meta_topic_id: TODO
-# version: 0.0.18
+# version: 0.0.17
 # authors: dthirdfatpig
 # url: https://github.com/dthirdfatpig/discourse-video-stream
 # required_version: 2.7.0

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "erb"
 require "openssl"
 
 module DiscourseVideoStream
@@ -34,8 +33,8 @@ module DiscourseVideoStream
     end
 
     def fetch_cloudflare_upload_details(params)
-      account_id = SiteSetting.video_stream_account_id.to_s.strip.presence
-      api_token = SiteSetting.video_stream_api_token.to_s.strip.presence
+      account_id = SiteSetting.video_stream_account_id.presence
+      api_token = SiteSetting.video_stream_api_token.presence
 
       if account_id.blank? || api_token.blank?
         context.fail!(error: I18n.t("video_stream.errors.misconfigured"), status: 422)
@@ -48,8 +47,8 @@ module DiscourseVideoStream
     end
 
     def fetch_bunny_upload_details(params)
-      library_id = SiteSetting.video_stream_bunny_library_id.to_s.strip.presence
-      api_key = SiteSetting.video_stream_bunny_api_key.to_s.strip.presence
+      library_id = SiteSetting.video_stream_bunny_library_id.presence
+      api_key = SiteSetting.video_stream_bunny_api_key.presence
 
       if library_id.blank? || api_key.blank?
         context.fail!(error: I18n.t("video_stream.errors.misconfigured"), status: 422)
@@ -59,7 +58,7 @@ module DiscourseVideoStream
 
       create_response =
         Faraday.post(
-          "#{BUNNY_API_HOST}/library/#{ERB::Util.url_encode(library_id)}/videos",
+          "#{BUNNY_API_HOST}/library/#{library_id}/videos",
           { title: title }.to_json,
           {
             "AccessKey" => api_key,
@@ -72,7 +71,7 @@ module DiscourseVideoStream
         end
 
       if create_response.status >= 400
-        log_failure("bunny", create_response.status, parse_body(create_response.body))
+        log_failure(create_response.status, parse_body(create_response.body))
         context.fail!(error: I18n.t("video_stream.errors.upload_url"), status: 422)
       end
 
@@ -80,7 +79,7 @@ module DiscourseVideoStream
       video_id = body["guid"].presence
 
       if video_id.blank?
-        log_failure("bunny", create_response.status, body)
+        log_failure(create_response.status, body)
         context.fail!(error: I18n.t("video_stream.errors.upload_url"), status: 422)
       end
 
@@ -124,8 +123,8 @@ module DiscourseVideoStream
       { "raw" => raw_body.to_s.truncate(500) }
     end
 
-    def log_failure(provider, status, body)
-      Rails.logger.error("[VideoStream] Failed to prepare #{provider} upload (status=#{status}): #{body}")
+    def log_failure(status, body)
+      Rails.logger.error("[VideoStream] Failed to prepare upload (status=#{status}): #{body}")
     end
 
     def log_exception(error)
